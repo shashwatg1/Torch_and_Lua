@@ -2,6 +2,7 @@
 This contains files from the tutorials and implementations on Lua and Torch
 
 Some important links for reference:
-1. http://torch.ch/docs/tutorials.html
-2. http://tylerneylon.com/a/learn-lua/
-3. https://www.youtube.com/playlist?list=PLLHTzKZzVU9ebuL6DCclzI54MrPNFGqbW
+* [Torch Tutorials] (http://torch.ch/docs/tutorials.html)
+* [Programming in Lua (ebook)] (http://www.lua.org/pil/contents.html)
+* [Learn Lua in 15 minutes] (http://tylerneylon.com/a/learn-lua/)
+* [Torch Video Tutorials] (https://www.youtube.com/playlist?list=PLLHTzKZzVU9ebuL6DCclzI54MrPNFGqbW)
