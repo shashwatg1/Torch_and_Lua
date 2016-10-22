@@ -1,5 +1,5 @@
 #Torch and lua work
-This contains files from the tutorials and implementations on Lua and Torch
+This contains files from the tutorials and implementations on [Lua] (https://www.lua.org/) and [Torch] (http://torch.ch/)
 
 Some important links for reference:
 * [Torch Tutorials] (http://torch.ch/docs/tutorials.html)
