@@ -1,3 +1,5 @@
+-- use th to compile these files in terminal
+
 ---- 1. Getting Help
 
 -- typing '?' on terminal after typing th provides some help about torch
@@ -16,7 +18,7 @@ t = torch.Tensor(2,3,4) -- 2 matrices of size 3 X 4
 print (#t) -- dimension of t
 
 i = 0
-t:apply(function () i = i+1; return i; end)
+t:apply(function () i = i+1; return i; end) -- tensor is filled with 1,2,3,4,...
 
 print(t)
 print(torch.type(t)) -- torch.DoubleTensor (default)
@@ -59,6 +61,7 @@ b = a:double()
 print(torch.type(b)) -- double
 print(torch.type(a)) -- dloat
 
+
 ---- 3. Vectors (1 dimensional Tensors)
 
 v = torch.Tensor{1,2,3,4}
@@ -85,7 +88,7 @@ m = torch.Tensor{ {9,6,3,4}, {7,2,8,1} }
 print(m)
 
 -- to extract a given element use:
-print(m[2][3], m[{2,3}])
+print(m[2][3], m[{2,3}]) -- either
 
 -- to extract entire column or row:
 print( m[{{},{1}}] )
@@ -136,9 +139,9 @@ a = torch.Tensor(3,5):random(10)
 print(a)
 
 b = a*2 -- a is not replaced with a * 2
-b = a:mul(2) -- not a is replaced with a * 2
+b = a:mul(2) -- now a is replaced with a * 2
 b = a+1 -- a is not replaced with a + 1
-b = a:add(1) -- not a is replaced with a + 1
+b = a:add(1) -- now a is replaced with a + 1
 -- similarly we have div(), pow()
 print(a)
 

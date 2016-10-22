@@ -1,3 +1,5 @@
+-- use lua to compile these files in terminal
+
 num = 42  -- All numbers are doubles.
 -- Don't freak out, 64-bit doubles have 52 bits for
 -- storing exact int values; machine precision is

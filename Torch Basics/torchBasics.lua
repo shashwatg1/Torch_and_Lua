@@ -1,3 +1,5 @@
+-- use th to compile these files in terminal
+
 torch.manualSeed(1234)
 
 a = torch.FloatTensor(2,3) -- 2X3 Tensor
