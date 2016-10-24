@@ -59,6 +59,8 @@ cropImg = image.crop(outputImg, 0, 0, 512/2, 512/2) -- to get just the top left 
 -- image.display{image=cropImg, zoom = 1, legend = 'Cropped'} -- to check the results
 
 
---image.display(image.drawText(image.lena(), 'hello\nworld', 10, 10)) -- to write on image (Not working)
---image.display(image.drawText(image.lena(), 'hello\nworld', 10, 20, {color = {0,255,0},size = 5}))
---image.display(image.drawText(image.lena(), 'hello\nworld', 10, 20, {color = {0,255,0},size = 5,bg = {255,0,0}}))
+-- image.display(image.drawText(image.lena(), 'hello\nworld', 10, 10)) -- to write on image
+-- image.display(image.drawText(image.lena(), 'hello\nworld', 10, 20, {color = {0,255,0},size = 5}))
+-- image.display(image.drawText(image.lena(), 'hello\nworld', 10, 20, {color = {0,255,0},size = 5,bg = {255,0,0}}))
+
+-- image.display(image.drawRect(image.lena(), 200, 200, 370, 400, {lineWidth = 5, color = {0,255,0}})) -- to draw a rectangle
