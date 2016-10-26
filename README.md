@@ -7,3 +7,4 @@ Some important links for reference:
 * [Programming in Lua (ebook)] (http://www.lua.org/pil/contents.html)
 * [Learn Lua in 15 minutes] (http://tylerneylon.com/a/learn-lua/)
 * [Torch Video Tutorials] (https://www.youtube.com/playlist?list=PLLHTzKZzVU9ebuL6DCclzI54MrPNFGqbW)
+* [Neural Networks and Deep Learning Kickstart (Highly recommended)] (http://neuralnetworksanddeeplearning.com/)
