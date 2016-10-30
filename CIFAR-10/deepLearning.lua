@@ -1,7 +1,8 @@
--- Refer to Deep Learning with Torch before starting this (In neural nets package)
--- 'th' to compile
-
 --[[
+CIFAR-10 dataset training and testing using a deep learning implementation
+
+Note: use 'th' to compile
+
 We shall use the CIFAR-10 dataset, which has the classes:
 'airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'.
 The images in CIFAR-10 are of size 3x32x32, i.e. 3-channel color images of 32x32 pixels in size.
@@ -17,73 +18,120 @@ The dataset has 50,000 training images and 10,000 test images in total.
 
 torch.manualSeed(0)
 
+-- 1. Load and normalize Data
+
+require 'paths' -- check if the required dataset file is present in the working directory, else download it
+if (not paths.filep("cifar10torchsmall.zip")) then
+    os.execute('wget -c https://s3.amazonaws.com/torch7/data/cifar10torchsmall.zip')
+    os.execute('unzip cifar10torchsmall.zip')
+end
+
+trainset = torch.load('cifar10-train.t7')
+testset = torch.load('cifar10-test.t7')
+classes = {'airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'}
+
+print(trainset)
+print(#trainset.data)
+
+itorch.image(trainset.data[100]) -- display the 100-th image in dataset
+print(classes[trainset.label[100]])
+
+--[[
+Now, to prepare the dataset to be used with nn.StochasticGradient,
+a couple of things have to be done according to it's documentation.
+->    The dataset has to have a :size() function.
+->    The dataset has to have a [i] index operator, so that dataset[i] returns the ith sample in the datset.
+Both can be done quickly:
+]]
+
+
+-- setmetatable sets the index operator.
+setmetatable(trainset, 
+    {__index = function(t, i) 
+                    return {t.data[i], t.label[i]} 
+                end}
+);
+trainset.data = trainset.data:double() -- convert the data from a ByteTensor to a DoubleTensor.
+
+function trainset:size() 
+    return self.data:size(1) 
+end
+
+print(trainset:size()) -- just to test
+
+print(trainset[33]) -- load sample number 33.
+itorch.image(trainset[33][1])
+
+
+--  tensor indexing operator example:
+redChannel = trainset.data[{ {}, {1}, {}, {}  }]
+-- this picks {all images, 1st channel, all vertical pixels, all horizontal pixels}
+
+print(#redChannel)
+
+-- In this indexing operator, you initally start with [{ }].
+-- You can pick all elements in a dimension using {} or pick a particular element using {i}
+-- where i is the element index. You can also pick a range of elements using {i1, i2},
+-- for example {3,5} gives us the 3,4,5 elements.
+
+
+-- One of the most important things you can do in conditioning your data (in general in data-science or 
+-- machine learning) is to make your data to have a mean of 0.0 and standard-deviation of 1.0.
+
+mean = {} -- store the mean, to normalize the test set in the future
+stdv  = {} -- store the standard-deviation for the future
+for i=1,3 do -- over each image channel
+    mean[i] = trainset.data[{ {}, {i}, {}, {}  }]:mean() -- mean estimation
+    print('Channel ' .. i .. ', Mean: ' .. mean[i])
+    trainset.data[{ {}, {i}, {}, {}  }]:add(-mean[i]) -- mean subtraction
+    
+    stdv[i] = trainset.data[{ {}, {i}, {}, {}  }]:std() -- std estimation
+    print('Channel ' .. i .. ', Standard Deviation: ' .. stdv[i])
+    trainset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
+end
+-- Our training data is now normalized and ready to be used.
+
+
+
+-- 2. Define the Neural Network
+
 require 'nn'
 
 net = nn.Sequential()
-net:add(nn.SpatialConvolution(1, 6, 5, 5)) -- 1 input image channel, 6 output channels, 5x5 convolution kernel
-net:add(nn.ReLU())                -- non-linearity 
+net:add(nn.SpatialConvolution(3, 6, 5, 5)) -- 3 input image channels, 6 output channels, 5x5 convolution kernel
+net:add(nn.ReLU())                       -- non-linearity 
 net:add(nn.SpatialMaxPooling(2,2,2,2))  -- A max-pooling operation that looks at 2x2 windows and finds the max.
 net:add(nn.SpatialConvolution(6, 16, 5, 5))
-net:add(nn.ReLU())                 -- non-linearity 
+net:add(nn.ReLU())                      -- non-linearity 
 net:add(nn.SpatialMaxPooling(2,2,2,2))
-net:add(nn.View(16*5*5))            -- reshapes from a 3D tensor of 16x5x5 into 1D tensor of 16*5*5
+net:add(nn.View(16*5*5))                -- reshapes from a 3D tensor of 16x5x5 into 1D tensor of 16*5*5
 net:add(nn.Linear(16*5*5, 120))     -- fully connected layer (matrix multiplication between input and weights)
 net:add(nn.ReLU())                  -- non-linearity 
 net:add(nn.Linear(120, 84))
 net:add(nn.ReLU())                  -- non-linearity 
-net:add(nn.Linear(84, 10))         -- 10 is the number of outputs of the network (in this case, 10 digits)
-net:add(nn.LogSoftMax())         -- converts the output to a log-probability. Useful for classification problem
-
-print('Lenet5\n' .. net:__tostring());
-
---[[
-Every neural network module in torch has automatic differentiation.
-It has a :forward(input) function that computes the output for a given input,
-flowing the input through the network.
-and it has a :backward(input, gradient) function that will differentiate each neuron
-in the network w.r.t. the gradient that is passed in. This is done via the chain rule.
-]]
+net:add(nn.Linear(84, 10))          -- 10 is the number of outputs of the network (in this case, 10 digits)
+net:add(nn.LogSoftMax())       -- converts the output to a log-probability. Useful for classification problems
 
 
-input = torch.rand(1,32,32) -- pass a random tensor as input to the network
--- print('Input',input)
+-- 3. Define the Loss Function
 
-output = net:forward(input)
-print(output)
+-- Let us use a Log-likelihood classification loss. It is well suited for most classification problems.
+criterion = nn.ClassNLLCriterion()
 
-net:zeroGradParameters()	 -- zero the internal gradient buffers of the network
 
-gradInput = net:backward(input, torch.rand(10))
--- print(#gradInput)
+-- 4. Train network on training data
 
---[[
-need for a loss function:
-In torch, loss functions are implemented just like neural network modules, and have automatic differentiation.
-They have two functions - forward(input, target), backward(input, target)
-]]
+-- This is when things start to get interesting.
+-- Let us first define an nn.StochasticGradient object.
+-- Then we will give our dataset to this object's :train function, and that will get the ball rolling.
 
-criterion = nn.ClassNLLCriterion() -- a negative log-likelihood criterion for multi-class classification
-criterion:forward(output, 3) -- let's say the groundtruth was class number: 3
--- print({criterion})
-gradients = criterion:backward(output, 3)
--- print(gradients)
-gradInput = net:backward(input, gradients)
--- print(gradInput)
+trainer = nn.StochasticGradient(net, criterion)
+trainer.learningRate = 0.001
+trainer.maxIteration = 5 -- just do 5 epochs of training.
 
---[[
-Quick Recap:
-->  Network can have many layers of computation
-->  Network takes an input and produces an output in the :forward pass
-->  Criterion computes the loss of the network, and it's gradients w.r.t. the output of the network.
-->  Network takes an (input, gradients) pair in it's backward pass and calculates the gradients
-	w.r.t. each layer (and neuron) in the network.
--> 	A convolution layer learns it's convolution kernels to adapt to the input data and the problem being solved
-->  A max-pooling layer has no learnable parameters. It only finds the max of local windows.
-->  A layer in torch which has learnable weights, will typically have fields .weight (and optionally, .bias)
-->  The gradWeight accumulates the gradients w.r.t. each weight in the layer,
-	and the gradBias, w.r.t. each bias in the layer.
-]]
+trainer:train(trainset)
 
-m = nn.SpatialConvolution(1,3,2,2) -- learn 3 2x2 kernels
--- print(m.weight) -- initially, the weights are randomly initialized
--- print(m.bias) -- The operation in a convolution layer is: output = convolution(input,weight) + bias
+
+
+-- 5. Test network on test data
+
