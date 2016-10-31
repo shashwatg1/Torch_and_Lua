@@ -31,10 +31,10 @@ testset = torch.load('cifar10-test.t7')
 classes = {'airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'}
 
 print(trainset)
-print(#trainset.data)
+-- print(#trainset.data)
 
-itorch.image(trainset.data[100]) -- display the 100-th image in dataset
-print(classes[trainset.label[100]])
+--itorch.image(trainset.data[100]) -- display the 100-th image in dataset
+-- print(classes[trainset.label[100]])
 
 --[[
 Now, to prepare the dataset to be used with nn.StochasticGradient,
@@ -43,7 +43,6 @@ a couple of things have to be done according to it's documentation.
 ->    The dataset has to have a [i] index operator, so that dataset[i] returns the ith sample in the datset.
 Both can be done quickly:
 ]]
-
 
 -- setmetatable sets the index operator.
 setmetatable(trainset, 
@@ -57,17 +56,17 @@ function trainset:size()
     return self.data:size(1) 
 end
 
-print(trainset:size()) -- just to test
+-- print(trainset:size()) -- just to test
 
-print(trainset[33]) -- load sample number 33.
-itorch.image(trainset[33][1])
+-- print(trainset[33]) -- load sample number 33.
+--itorch.image(trainset[33][1])
 
 
 --  tensor indexing operator example:
-redChannel = trainset.data[{ {}, {1}, {}, {}  }]
+-- redChannel = trainset.data[{ {}, {1}, {}, {}  }]
 -- this picks {all images, 1st channel, all vertical pixels, all horizontal pixels}
 
-print(#redChannel)
+-- print(#redChannel)
 
 -- In this indexing operator, you initally start with [{ }].
 -- You can pick all elements in a dimension using {} or pick a particular element using {i}
@@ -90,7 +89,6 @@ for i=1,3 do -- over each image channel
     trainset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
 end
 -- Our training data is now normalized and ready to be used.
-
 
 
 -- 2. Define the Neural Network
@@ -132,6 +130,56 @@ trainer.maxIteration = 5 -- just do 5 epochs of training.
 trainer:train(trainset)
 
 
-
 -- 5. Test network on test data
 
+-- print(classes[testset.label[100]])
+--itorch.image(testset.data[100])
+
+-- normalizing
+testset.data = testset.data:double()   -- convert from Byte tensor to Double tensor
+for i=1,3 do -- over each image channel
+    testset.data[{ {}, {i}, {}, {}  }]:add(-mean[i]) -- mean subtraction    
+    testset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
+end
+
+-- testing one example
+print(classes[testset.label[100]])
+--itorch.image(testset.data[100])
+predicted = net:forward(testset.data[100])
+-- the output of the network is Log-Probabilities. To convert them to probabilities, you have to take e^x 
+print(predicted:exp())
+-- You can see the network predictions. The network assigned a probability to each classes, given the image.
+-- To make it clearer, let us tag each probability with it's class-name:
+for i=1,predicted:size(1) do
+    print(classes[i], predicted[i])
+end
+
+
+--Alright but how many in total seem to be correct over the test set?
+correct = 0
+for i=1,10000 do
+    local groundtruth = testset.label[i]
+    local prediction = net:forward(testset.data[i])
+    local confidences, indices = torch.sort(prediction, true)  -- true means sort in descending order
+    if groundtruth == indices[1] then
+        correct = correct + 1
+    end
+end
+
+print(correct, 100*correct/10000 .. ' % ')
+
+
+--Hmmm, what are the classes that performed well, and the classes that did not perform well:
+class_performance = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+for i=1,10000 do
+    local groundtruth = testset.label[i]
+    local prediction = net:forward(testset.data[i])
+    local confidences, indices = torch.sort(prediction, true)  -- true means sort in descending order
+    if groundtruth == indices[1] then
+        class_performance[groundtruth] = class_performance[groundtruth] + 1
+    end
+end
+
+for i=1,#classes do
+    print(classes[i], 100*class_performance[i]/1000 .. ' %')
+end
